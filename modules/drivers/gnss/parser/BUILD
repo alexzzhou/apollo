@@ -8,6 +8,7 @@ cc_library(
         ":data_parser",
         ":newtonm2_parser",
         ":novatel_parser",
+        ":ublox_parser",
         ":rtcm_parsers",
     ],
 )
@@ -57,6 +58,25 @@ cc_library(
     srcs = ["newtonm2_parser.cc"],
     hdrs = [
         "newtonm2_parser.h",
+        "novatel_messages.h",
+        "parser.h",
+        "rtcm_decode.h",
+    ],
+    deps = [
+        "//cyber",
+        "//external:gflags",
+        "//modules/common/monitor_log",
+        "//modules/drivers/gnss/proto:gnss_proto",
+        "//modules/drivers/gnss/third_party:rtcm",
+        "//modules/drivers/gnss/util:gnss_util",
+    ],
+)
+
+cc_library(
+    name = "ublox_parser",
+    srcs = ["ublox_parser.cc"],
+    hdrs = [
+        "ublox_parser.h",
         "novatel_messages.h",
         "parser.h",
         "rtcm_decode.h",

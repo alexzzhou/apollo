@@ -61,6 +61,9 @@ Parser *CreateParser(config::Config config, bool is_base_station = false) {
     case config::Stream::NEWTONM2_BINARY:
       return Parser::CreateNewtonM2(config);
 
+    case config::Stream::UBLOX_BINARY:
+      return Parser::CreateUblox(config);
+
     default:
       return nullptr;
   }
