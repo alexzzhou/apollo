@@ -25,9 +25,11 @@ namespace gnss {
 class UbloxParser : public Parser {
 
  public:
-  UbloxParser();
+  UbloxParser() = default;
 
-  virtual Parser::MessageType GetMessage(MessagePtr& message_ptr);
+  virtual ~UbloxParser() = default;
+
+  virtual MessageType GetMessage(MessagePtr *message_ptr);
 
  private:
   bool verify_checksum();

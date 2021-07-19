@@ -24,14 +24,17 @@ namespace gnss {
 
 Parser* Parser::CreateUblox(const config::Config& config) {
     return new UbloxParser();
-  }
+}
 
-UbloxParser::UbloxParser() {}
 
-Parser::MessageType UbloxParser::GetMessage(MessagePtr& message_ptr) {
-  if (data_ == nullptr) {
-    return MessageType::NONE;
-  }
+// UbloxParser::UbloxParser() {
+    
+// }
+
+Parser::MessageType UbloxParser::GetMessage(MessagePtr *message_ptr) {
+//   if (data_ == nullptr) {
+//     return MessageType::NONE;
+//   }
   return MessageType::NONE;
 }
 
