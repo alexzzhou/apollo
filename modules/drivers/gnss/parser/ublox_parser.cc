@@ -31,66 +31,49 @@ Parser* Parser::CreateUblox(const config::Config& config) {
 // }
 
 Parser::MessageType UbloxParser::GetMessage(MessagePtr *message_ptr) {
-  if (data_ == nullptr) {
-    return MessageType::NONE;
-  }
-  while (data_ < data_end_) {
-    if (buffer_.empty()) {
-      if (*data_ == novatel::SYNC_0) {
-        buffer_.push_back(*data_);
-      }
+   if (data_ == nullptr) {
+     return MessageType::NONE;
+   }
+
+   while (data_ < data_end_) {
+     if (buffer_.empty()) {
+       if (*data_ == ) {
+         buffer_.push_back(*data_);
+       }
       ++data_;
-    } else if (buffer_.size() == 1) {  // Looking for SYNC1
-      if (*data_ == novatel::SYNC_1) {
-        buffer_.push_back(*data_++);
-      } else {
-        buffer_.clear();
-      }
-    } else if (buffer_.size() == 2) {  // Looking for SYNC2
-      switch (*data_) {
-        case novatel::SYNC_2_LONG_HEADER:
-          buffer_.push_back(*data_++);
-          header_length_ = sizeof(novatel::LongHeader);
-          break;
-        case novatel::SYNC_2_SHORT_HEADER:
-          buffer_.push_back(*data_++);
-          header_length_ = sizeof(novatel::ShortHeader);
-          break;
-        default:
-          buffer_.clear();
-      }
-    } else if (header_length_ > 0) {  // Working on header.
-      if (buffer_.size() < header_length_) {
-        buffer_.push_back(*data_++);
-      } else {
-        if (header_length_ == sizeof(novatel::LongHeader)) {
-          total_length_ = header_length_ + novatel::CRC_LENGTH +
-                          reinterpret_cast<novatel::LongHeader*>(buffer_.data())
-                              ->message_length;
-        } else if (header_length_ == sizeof(novatel::ShortHeader)) {
-          total_length_ =
-              header_length_ + novatel::CRC_LENGTH +
-              reinterpret_cast<novatel::ShortHeader*>(buffer_.data())
-                  ->message_length;
-        } else {
-          AERROR << "Incorrect header_length_. Should never reach here.";
-          buffer_.clear();
-        }
-        header_length_ = 0;
-      }
-    } else if (total_length_ > 0) {
-      if (buffer_.size() < total_length_) {  // Working on body.
-        buffer_.push_back(*data_++);
-        continue;
-      }
-      MessageType type = PrepareMessage(message_ptr);
-      buffer_.clear();
-      total_length_ = 0;
-      if (type != MessageType::NONE) {
-        return type;
-      }
-    }
-  }
+     } 
+     } else if (header_length_ > 0) {  // Working on header.
+  //     if (buffer_.size() < header_length_) {
+  //       buffer_.push_back(*data_++);
+  //     } else {
+  //       if (header_length_ == ) {
+  //         total_length_ = header_length_ + novatel::CRC_LENGTH +
+  //                         reinterpret_cast<novatel::LongHeader*>(buffer_.data())
+  //                             ->message_length;
+  //       } else if (header_length_ == sizeof(novatel::ShortHeader)) {
+  //         total_length_ =
+  //             header_length_ + novatel::CRC_LENGTH +
+  //             reinterpret_cast<novatel::ShortHeader*>(buffer_.data())
+  //                 ->message_length;
+  //       } else {
+  //         AERROR << "Incorrect header_length_. Should never reach here.";
+  //         buffer_.clear();
+  //       }
+  //       header_length_ = 0;
+  //     }
+  //   } else if (total_length_ > 0) {
+  //     if (buffer_.size() < total_length_) {  // Working on body.
+  //       buffer_.push_back(*data_++);
+  //       continue;
+  //     }
+  //     MessageType type = PrepareMessage(message_ptr);
+  //     buffer_.clear();
+  //     total_length_ = 0;
+  //     if (type != MessageType::NONE) {
+  //       return type;
+  //     }
+  //   }
+  // }
   return MessageType::NONE;
 
 }
@@ -98,7 +81,21 @@ Parser::MessageType UbloxParser::GetMessage(MessagePtr *message_ptr) {
 bool UbloxParser::verify_checksum() { return true; }
 
 Parser::MessageType UbloxParser::PrepareMessage(MessagePtr& message_ptr) {
-  return MessageType::NONE;
+  
+  // if (!check_crc()) {
+  //   AERROR << "CRC check failed.";
+    return MessageType::NONE;
+  // }
+
+  // uint8_t* message = nullptr;
+  // novatel::MessageId message_id;
+  // uint16_t message_length;
+  // uint16_t gps_week;
+  // uint32_t gps_millisecs;
+
+  // switch (message_id) {
+  //   case ublox_
+  // }
 }
 
 // The handle_xxx functions return whether a message is ready.

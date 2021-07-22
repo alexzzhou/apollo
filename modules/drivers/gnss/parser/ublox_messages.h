@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <string>
 
 #include "modules/drivers/gnss/proto/config.pb.h"
 
@@ -11,31 +12,25 @@ namespace gnss {
 namespace ublox {
 
 enum MessageId : uint16_t {
-  BESTGNSSPOS = 1429,
-  BESTGNSSVEL = 1430,
-  BESTPOS = 42,
-  BESTVEL = 99,
-  CORRIMUDATA = 812,
-  CORRIMUDATAS = 813,
-  INSCOV = 264,
-  INSCOVS = 320,
-  INSPVA = 507,
-  INSPVAS = 508,
-  INSPVAX = 1465,
-  PSRPOS = 47,
-  PSRVEL = 100,
-  RAWIMU = 268,
-  RAWIMUS = 325,
-  RAWIMUX = 1461,
-  RAWIMUSX = 1462,
-  MARK1PVA = 1067,
-  GPGGA = 218,
-  BDSEPHEMERIS = 1696,
-  GLOEPHEMERIS = 723,
-  GPSEPHEMERIS = 7,
-  RANGE = 43,
-  HEADING = 971,
-  IMURATECORRIMUS = 1362,
+  DTM = 0x0A,
+  GBQ = 0x44,
+  GBS = 0x09,
+  GGA = 0x00,
+  GLL = 0x01,
+  GLQ = 0x43,
+  GNQ = 0x42,
+  GNS = 0x0D,
+  GPQ = 0x40,
+  GRS = 0x06,
+  GSA = 0x02,
+  GST = 0x07,
+  GSV = 0x03,
+  RMC = 0x04,
+  THS = 0x0E,
+  TXT = 0x41,
+  VLW = 0x0F,
+  VTG = 0x05,
+  ZDA = 0x08
 };
 
 // Every binary message has 32-bit CRC performed on all data including the
@@ -43,13 +38,6 @@ enum MessageId : uint16_t {
 constexpr uint16_t CRC_LENGTH = 4;
 
 #pragma pack(push, 1)  // Turn off struct padding.
-
-enum SyncByte : uint8_t {
-  SYNC_0 = 0xAA,
-  SYNC_1 = 0x44,
-  SYNC_2_LONG_HEADER = 0x12,
-  SYNC_2_SHORT_HEADER = 0x13,
-};
 
 struct MessageType {
   enum MessageFormat {
@@ -69,35 +57,10 @@ struct MessageType {
   ResponseBit response : 1;
 };
 
-struct LongHeader {
-  SyncByte sync[3];
-  uint8_t header_length;
-  MessageId message_id;
-  MessageType message_type;
-  uint8_t port_address;  // Address of the data port the log was received on.
-  uint16_t
-      message_length;  // Message length (not including the header nor the CRC).
-  uint16_t sequence;   // Counts down from N-1 to 0 for multiple related logs.
-  uint8_t idle;  // Time the processor was idle in last second between logs with
-                 // same ID.
-  uint8_t time_status;     // Indicates the quality of the GPS time.
-  uint16_t gps_week;       // GPS Week number.
-  uint32_t gps_millisecs;  // Milliseconds of week.
-  uint32_t status;         // Receiver status.
-  uint16_t reserved;
-  uint16_t version;  // Receiver software build number.
-};
-static_assert(sizeof(LongHeader) == 28, "Incorrect size of LongHeader");
-
-struct ShortHeader {
-  SyncByte sync[3];
-  uint8_t
-      message_length;  // Message length (not including the header nor the CRC).
-  MessageId message_id;
-  uint16_t gps_week;       // GPS Week number.
-  uint32_t gps_millisecs;  // Milliseconds of week.
-};
-static_assert(sizeof(ShortHeader) == 12, "Incorrect size of ShortHeader");
+struct Header {
+    string talkerID;
+    string message;
+}
 
 enum class SolutionStatus : uint32_t {
   SOL_COMPUTED = 0,  // solution computed
@@ -123,45 +86,22 @@ enum class SolutionStatus : uint32_t {
 };
 
 enum class SolutionType : uint32_t {
-  NONE = 0,
-  FIXEDPOS = 1,
-  FIXEDHEIGHT = 2,
-  FLOATCONV = 4,
-  WIDELANE = 5,
-  NARROWLANE = 6,
-  DOPPLER_VELOCITY = 8,
-  SINGLE = 16,
-  PSRDIFF = 17,
-  WAAS = 18,
-  PROPOGATED = 19,
-  OMNISTAR = 20,
-  L1_FLOAT = 32,
-  IONOFREE_FLOAT = 33,
-  NARROW_FLOAT = 34,
-  L1_INT = 48,
-  WIDE_INT = 49,
-  NARROW_INT = 50,
-  RTK_DIRECT_INS = 51,  // RTK filter is directly initialized
-                        // from the INS filter.
-  INS_SBAS = 52,
-  INS_PSRSP = 53,
-  INS_PSRDIFF = 54,
-  INS_RTKFLOAT = 55,
-  INS_RTKFIXED = 56,
-  INS_OMNISTAR = 57,
-  INS_OMNISTAR_HP = 58,
-  INS_OMNISTAR_XP = 59,
-  OMNISTAR_HP = 64,
-  OMNISTAR_XP = 65,
-  PPP_CONVERGING = 68,
-  PPP = 69,
-  INS_PPP_CONVERGING = 73,
-  INS_PPP = 74,
+
 };
 
 enum class DatumId : uint32_t {
   // We only use WGS-84.
   WGS84 = 61,
+};
+
+struct Gll {
+    double lat;
+    char ns;
+    double lon;
+    char ew;
+    float time;
+    char status;
+    char posMode;
 };
 
 struct BDS_Ephemeris {
@@ -543,7 +483,7 @@ inline ImuParameter GetImuParameter(ImuType type) {
   }
 }
 
-}  // namespace novatel
+}  // namespace ublox
 }  // namespace gnss
 }  // namespace drivers
 }  // namespace apollo
