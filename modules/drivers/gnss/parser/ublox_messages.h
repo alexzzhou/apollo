@@ -76,13 +76,35 @@ enum class DatumId : uint32_t {
 };
 
 struct Gbs {
-
-
+  float time;
+  float errLat;
+  float errLon;
+  float errAlt;
+  float svid;
+  float prob;
+  float bias;
+  float stdev;
+  uint16_t systemId;
+  uint16_t signalId;
+  uint16_t cs;
 };
 
 struct Gga {
-
-
+  float time;
+  float lat;
+  char ns;
+  float lon;
+  char ew;
+  unit8_t quality;
+  float numSV;
+  float HDOP;
+  float alt;
+  char altUnit;
+  float sep;
+  char sepUnit;
+  float doffAge;
+  float diffStation;
+  uint16_t cs;
 };
 
 struct Gll {
