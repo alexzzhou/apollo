@@ -75,6 +75,16 @@ enum class DatumId : uint32_t {
   WGS84 = 61,
 };
 
+struct Gbs {
+
+
+};
+
+struct Gga {
+
+
+};
+
 struct Gll {
     double lat;
     char ns;
@@ -85,7 +95,35 @@ struct Gll {
     char posMode;
 };
 
-static_assert(sizeof(Heading) == 44, "Incorrect size of Heading");
+struct Gsa {
+
+
+};
+
+struct Gst {
+
+
+};
+
+struct Gsv {
+
+
+};
+
+struct Rmc {
+
+
+};
+
+struct Vtg {
+
+
+};
+
+struct Zda {
+
+
+};
 
 #pragma pack(pop)  // Back to whatever the previous packing mode was.
 
