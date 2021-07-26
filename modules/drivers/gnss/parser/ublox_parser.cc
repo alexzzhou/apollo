@@ -8,7 +8,7 @@
 #include <string>
 
 #include "cyber/cyber.h"
-#include "modules/drivers/gnss/parser/novatel_messages.h"
+#include "modules/drivers/gnss/parser/ublox_messages.h"
 #include "modules/drivers/gnss/parser/parser.h"
 #include "modules/drivers/gnss/parser/rtcm_decode.h"
 #include "modules/drivers/gnss/proto/gnss.pb.h"
@@ -36,52 +36,96 @@ Parser::MessageType UbloxParser::GetMessage(MessagePtr *message_ptr) {
   if (data_ == nullptr) {
     return MessageType::NONE;
   }
-  
-  while (data_ < data_end_) {
-    if (buffer_.empty()) {
-      if (*data_ == 0x24) {
-        buffer_.push_back(*data_);
-      }
-      ++data_;
-    }else if (buffer_.size() == 1) { // check for header 
-      for (int i = 0; i < 5; i++){
-        buffer_.push_back(*data_);
-        ++data_;
-      }
-    } else if (*data == ){
 
-    } else {
-      buffer_.push_back(*data_++);
+  std::string submessage(reinterpret_cast<const char*>(data_), static_cast<size_t>(data_end_ - data_));
+  
+  size_t iter = 0;
+
+  while (true){
+    size_t start = submessage.find_first_of("$");
+    size_t end = submessage.find("\r\n");
+
+    if (start == std::string::npos || end == std::string::npos){
+      AINFO << "break here";
+      break;
+    } else if (end > start) {
+      AINFO << "curmsg: " << submessage.substr(start, end - start);
+      data_ += (end - start);
+      MessageType type = PrepareMessage(submessage.substr(start, end - start), message_ptr);
+      return type;
+
+    } else if (end < start) {
+      iter = start;
+      submessage = submessage.substr(iter);
     }
   }
-  MessageType type = PrepareMessage(message_ptr);
-      buffer_.clear();
-      total_length_ = 0;
-      if (type != MessageType::NONE) {
-        return type;
-
   
   return MessageType::NONE;
 }
 
 bool UbloxParser::verify_checksum() { return true; }
 
-Parser::MessageType UbloxParser::PrepareMessage(MessagePtr *message_ptr) {
+Parser::MessageType UbloxParser::PrepareMessage(const std::string &message, MessagePtr *message_ptr) {
   
+  std::string messageID = message.substr(3,3);
+  std::vector<std::string> contents;
 
-  // uint8_t* message = nullptr;
-  // uint16_t message_length;
-  // uint16_t gps_week;
-  // uint32_t gps_millisecs;
+  //formatting message into a vector
+  std::string message_copy = message;
+  size_t pos = 0;
+  std::string token;
+  while ((pos = message_copy.find(",")) != std::string::npos) {
+    token = message_copy.substr(0, pos);
+    contents.push_back(token);
+    message_copy.erase(0, pos + 1);
+  }
 
-  // string talkerId = s(buffer_[1]) + s(buffer_[2]);
-  // string messageId = s(buffer_[3]) + s(buffer_[4]) + s(buffer_[5]);
+  AINFO << contents[3];
 
+  //GNSS satellite fault detection
+  if (messageID == "GBS"){
+
+  }
+
+  //Global positioning system fix data
+  else if (messageID == "GGA"){
+
+  }
+
+  //Latitude and longitude, with time of position fix and status
+  else if (messageID == "GLL"){
+    bestpos_.set_sol_status(SolutionStatus::SOL_COMPUTED);
+    bestpos_.set_sol_type(SolutionType::NONE);
+    if (contents[1] != ""){
+      bestpos_.set_latitude(std::stod(contents[1]));
+    }
+    if (contents[3] != ""){
+      bestpos_.set_longitude(std::stod(contents[3]));
+    }
+
+    *message_ptr = &bestpos_;
+    return MessageType::BEST_GNSS_POS;
+  }
+  //GNSS DOP and active satellites
+  else if (messageID == "GSA"){
+
+
+  }
+
+  //GNSS satellites in view
+  else if (messageID == "GSV"){
+
+  }
+
+  //Recommended minimum data
+  else if (messageID == "RMC"){}
+
+  //Course over ground and ground speed
+  else if (messageID == "VTG"){}
+
+  //Time and date
+  else if (messageID == "ZDA"){}
   
-  
-  // switch (message_id) {
-  //   case ublox_
-  // }
 
   return MessageType::NONE;
 }

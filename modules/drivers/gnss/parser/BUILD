@@ -78,6 +78,7 @@ cc_library(
     hdrs = [
         "ublox_parser.h",
         "novatel_messages.h",
+        "ublox_messages.h",
         "parser.h",
         "rtcm_decode.h",
     ],

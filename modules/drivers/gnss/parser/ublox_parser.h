@@ -34,7 +34,7 @@ class UbloxParser : public Parser {
  private:
   bool verify_checksum();
 
-  Parser::MessageType PrepareMessage(MessagePtr *message_ptr);
+  Parser::MessageType PrepareMessage(const std::string &message, MessagePtr *message_ptr);
 
   // The handle_xxx functions return whether a message is ready.
   //bool handle_esf_raw(const ublox::EsfRaw* raw, size_t data_size);
@@ -61,9 +61,12 @@ class UbloxParser : public Parser {
 
   size_t total_length_ = 0;
 
-  ::apollo::drivers::gnss::Gnss _gnss;
-  ::apollo::drivers::gnss::Imu _imu;
-  ::apollo::drivers::gnss::Ins _ins;
+  //protobuf messages
+  ::apollo::drivers::gnss::Gnss gnss_;
+  ::apollo::drivers::gnss::GnssBestPose bestpos_;
+  ::apollo::drivers::gnss::GnssStatus status_;
+  ::apollo::drivers::gnss::Imu imu_;
+  ::apollo::drivers::gnss::Ins ins_;
 };
 
 }  // namespace gnss

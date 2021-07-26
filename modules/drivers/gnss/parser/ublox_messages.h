@@ -58,16 +58,68 @@ struct MessageType {
 };
 
 struct Header {
-    string talkerID;
-    string message;
-}
+    std::string talkerID;
+    std::string message;
+};
 
 enum class SolutionStatus : uint32_t {
-  
+  SOL_COMPUTED = 0,  // solution computed
+  INSUFFICIENT_OBS,  // insufficient observations
+  NO_CONVERGENCE,    // no convergence
+  SINGULARITY,       // singularity at parameters matrix
+  COV_TRACE,         // covariance trace exceeds maximum (trace > 1000 m)
+  TEST_DIST,   // test distance exceeded (max of 3 rejections if distance > 10
+               // km)
+  COLD_START,  // not yet converged from cold start
+  V_H_LIMIT,   // height or velocity limits exceeded
+  VARIANCE,    // variance exceeds limits
+  RESIDUALS,   // residuals are too large
+  INTEGRITY_WARNING = 13,  // large residuals make position questionable
+  PENDING = 18,  // receiver computes its position and determines if the fixed
+                 // position is valid
+  INVALID_FIX = 19,   // the fixed position entered using the fix position
+                      // command is invalid
+  UNAUTHORIZED = 20,  // position type is unauthorized
+  INVALID_RATE =
+      22,  // selected logging rate is not supported for this solution type
+  NONE = std::numeric_limits<uint32_t>::max(),
 };
 
 enum class SolutionType : uint32_t {
-
+  NONE = 0,
+  FIXEDPOS = 1,
+  FIXEDHEIGHT = 2,
+  FLOATCONV = 4,
+  WIDELANE = 5,
+  NARROWLANE = 6,
+  DOPPLER_VELOCITY = 8,
+  SINGLE = 16,
+  PSRDIFF = 17,
+  WAAS = 18,
+  PROPOGATED = 19,
+  OMNISTAR = 20,
+  L1_FLOAT = 32,
+  IONOFREE_FLOAT = 33,
+  NARROW_FLOAT = 34,
+  L1_INT = 48,
+  WIDE_INT = 49,
+  NARROW_INT = 50,
+  RTK_DIRECT_INS = 51,  // RTK filter is directly initialized
+                        // from the INS filter.
+  INS_SBAS = 52,
+  INS_PSRSP = 53,
+  INS_PSRDIFF = 54,
+  INS_RTKFLOAT = 55,
+  INS_RTKFIXED = 56,
+  INS_OMNISTAR = 57,
+  INS_OMNISTAR_HP = 58,
+  INS_OMNISTAR_XP = 59,
+  OMNISTAR_HP = 64,
+  OMNISTAR_XP = 65,
+  PPP_CONVERGING = 68,
+  PPP = 69,
+  INS_PPP_CONVERGING = 73,
+  INS_PPP = 74,
 };
 
 enum class DatumId : uint32_t {
@@ -95,7 +147,7 @@ struct Gga {
   char ns;
   float lon;
   char ew;
-  unit8_t quality;
+  uint8_t quality;
   float numSV;
   float HDOP;
   float alt;
