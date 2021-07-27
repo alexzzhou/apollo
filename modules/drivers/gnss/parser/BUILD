@@ -79,6 +79,7 @@ cc_library(
         "ublox_parser.h",
         "novatel_messages.h",
         "ublox_messages.h",
+        "newtonm2_parser.h",
         "parser.h",
         "rtcm_decode.h",
     ],
