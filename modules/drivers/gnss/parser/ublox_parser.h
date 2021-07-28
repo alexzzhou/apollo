@@ -36,7 +36,7 @@ class UbloxParser : public Parser {
 
   Parser::MessageType PrepareMessage(const std::string &message, MessagePtr *message_ptr);
 
-  bool HandleGSV(std::vector<std::string> contents);
+  // bool HandleGSV(std::vector<std::string> contents);
   // The handle_xxx functions return whether a message is ready.
   //bool handle_esf_raw(const ublox::EsfRaw* raw, size_t data_size);
   //bool handle_esf_ins(const ublox::EsfIns* ins);
