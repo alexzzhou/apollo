@@ -11,26 +11,27 @@ namespace drivers {
 namespace gnss {
 namespace ublox {
 
-enum MessageId : uint16_t {
-  DTM = 0x0A,
-  GBQ = 0x44,
-  GBS = 0x09,
-  GGA = 0x00,
-  GLL = 0x01,
-  GLQ = 0x43,
-  GNQ = 0x42,
-  GNS = 0x0D,
-  GPQ = 0x40,
-  GRS = 0x06,
-  GSA = 0x02,
-  GST = 0x07,
-  GSV = 0x03,
-  RMC = 0x04,
-  THS = 0x0E,
-  TXT = 0x41,
-  VLW = 0x0F,
-  VTG = 0x05,
-  ZDA = 0x08
+enum ClassId : uint8_t{
+  NAV = 0x01,
+  RXM = 0x02,
+  INF = 0x04,
+  ACK = 0x05,
+  CFG = 0x06,
+  UPD = 0x09,
+  MON = 0x0A,
+  AID = 0x0B,
+  TIM = 0x0D,
+  ESF = 0x10,
+  MGA = 0x13,
+  LOG = 0x21,
+  SEC = 0x27,
+  HNR = 0x28,
+};
+
+enum MessageId : uint8_t {
+  NAV_POSECEF = 0x01,
+  NAV_POSLLH = 0x02,
+  NAV_PVT = 0x07,
 };
 
 // Every binary message has 32-bit CRC performed on all data including the
@@ -58,8 +59,11 @@ struct MessageType {
 };
 
 struct Header {
-    std::string talkerID;
-    std::string message;
+  uint8_t sync0 = 0xB5;
+  uint8_t sync1 = 0x62;
+  ClassId class_id;
+  MessageId message_id;
+  uint16_t message_length;
 };
 
 enum class SolutionStatus : uint32_t {
@@ -127,76 +131,58 @@ enum class DatumId : uint32_t {
   WGS84 = 61,
 };
 
-struct Gbs {
-  float time;
-  float errLat;
-  float errLon;
-  float errAlt;
-  float svid;
-  float prob;
-  float bias;
-  float stdev;
-  uint16_t systemId;
-  uint16_t signalId;
-  uint16_t cs;
+struct NAVPOSLLH{
+  uint32_t itow;
+  uint32_t lat;
+  uint32_t lon;
+  uint32_t height;
+  uint32_t hmsl; //height above mean sea level
+  uint32_t  hAcc; //horizontal accuracy estimate
+  uint32_t vAcc; //vertical accuracy estimate
 };
 
-struct Gga {
-  float time;
-  float lat;
-  char ns;
-  float lon;
-  char ew;
-  uint8_t quality;
-  float numSV;
-  float HDOP;
-  float alt;
-  char altUnit;
-  float sep;
-  char sepUnit;
-  float doffAge;
-  float diffStation;
-  uint16_t cs;
+struct NAVPOSECEF{
+  uint32_t itow; //time of week of navigation epoch
+  uint32_t ecefX;
+  uint32_t ecefY;
+  uint32_t ecefZ;
+  uint32_t pAcc;
 };
 
-struct Gll {
-    double lat;
-    char ns;
-    double lon;
-    char ew;
-    float time;
-    char status;
-    char posMode;
-};
-
-struct Gsa {
-
-
-};
-
-struct Gst {
-
-
-};
-
-struct Gsv {
-
-
-};
-
-struct Rmc {
-
-
-};
-
-struct Vtg {
-
-
-};
-
-struct Zda {
-
-
+struct NAVPVT{
+  uint32_t itow;
+  uint16_t year;
+  uint8_t month;
+  uint8_t day;
+  uint8_t hour;
+  uint8_t min;
+  uint8_t sec;
+  uint8_t valid; //bitfield
+  uint32_t tAcc; //time accuracy
+  int32_t nano;
+  uint8_t fixType; 
+  uint8_t flags; //bitfield
+  uint8_t flags2; //bitfield
+  uint8_t numSV;
+  int32_t lon;
+  int32_t lat;
+  int32_t height;
+  int32_t hMSL;
+  uint32_t hAcc;
+  uint32_t vAcc;
+  int32_t ve1N;
+  int32_t ve1E;
+  int32_t velD;
+  int32_t gSpeed;
+  int32_t headMot;
+  uint32_t sAcc;
+  uint32_t headAcc;
+  uint16_t pDOP;
+  uint16_t flags3; //bitfield
+  uint8_t reserved1;
+  int32_t headVeh;
+  int16_t magDec;
+  uint16_t magAcc;
 };
 
 #pragma pack(pop)  // Back to whatever the previous packing mode was.

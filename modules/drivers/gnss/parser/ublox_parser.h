@@ -34,7 +34,7 @@ class UbloxParser : public Parser {
  private:
   bool verify_checksum();
 
-  Parser::MessageType PrepareMessage(const std::string &message, MessagePtr *message_ptr);
+  Parser::MessageType PrepareMessage(MessagePtr *message_ptr);
 
   // bool HandleGSV(std::vector<std::string> contents);
   // The handle_xxx functions return whether a message is ready.

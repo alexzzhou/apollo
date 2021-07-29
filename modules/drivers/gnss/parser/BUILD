@@ -22,6 +22,7 @@ cc_library(
     ],
     deps = [
         ":newtonm2_parser",
+        ":ublox_parser",
         ":novatel_parser",
         "//cyber",
         "//modules/common/adapters:adapter_gflags",

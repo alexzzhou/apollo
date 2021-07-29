@@ -127,6 +127,7 @@ void DataParser::ParseRawData(const std::string &msg) {
     return;
   }
 
+  AINFO << "Data received, parse raw data: " << msg;
   data_parser_->Update(msg);
   Parser::MessageType type;
   MessagePtr msg_ptr;

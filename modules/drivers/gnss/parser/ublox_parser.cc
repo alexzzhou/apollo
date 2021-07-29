@@ -37,28 +37,38 @@ Parser::MessageType UbloxParser::GetMessage(MessagePtr *message_ptr) {
     return MessageType::NONE;
   }
 
-  std::string submessage(reinterpret_cast<const char *>(data_),
-                         static_cast<size_t>(data_end_ - data_));
-
-  size_t iter = 0;
-
-  while (true) {
-    size_t start = submessage.find_first_of("$");
-    size_t end = submessage.find("\r\n");
-
-    if (start == std::string::npos || end == std::string::npos) {
-      AINFO << "break here";
-      break;
-    } else if (end > start) {
-      AINFO << "curmsg: " << submessage.substr(start, end - start);
-      data_ += (end - start);
-      MessageType type =
-          PrepareMessage(submessage.substr(start, end - start), message_ptr);
-      return type;
-
-    } else if (end < start) {
-      iter = start;
-      submessage = submessage.substr(iter);
+  while (data_ < data_end_) {
+    if (buffer_.empty()) {  // Looking for SYNC0
+      if (*data_ == 0xB5) {
+        buffer_.push_back(*data_);
+      }
+      ++data_;
+    } else if (buffer_.size() == 1) {  // Looking for SYNC1
+      if (*data_ == 0x62) {
+        buffer_.push_back(*data_++);
+      } else {
+        buffer_.clear();
+      }
+    } else if (buffer_.size() >= 2 && buffer_.size() < 5) {  // Working on header.
+      buffer_.push_back(*data_++);
+    } else if (buffer_.size() == 5){
+      //total includes 2 syncbytes, class and message ID (2 bytes)
+      //payload size message (2 bytes), and 2 bytes checksum
+      buffer_.push_back(*data_++);
+      total_length_ = 8 +
+                    reinterpret_cast<ublox::Header*>(buffer_.data())
+                        ->message_length;
+    } else if (total_length_ > 0) {
+      if (buffer_.size() < total_length_) {  // Working on body.
+        buffer_.push_back(*data_++);
+        continue;
+      }
+      MessageType type = PrepareMessage(message_ptr);
+      buffer_.clear();
+      total_length_ = 0;
+      if (type != MessageType::NONE) {
+        return type;
+      }
     }
   }
 
@@ -67,159 +77,55 @@ Parser::MessageType UbloxParser::GetMessage(MessagePtr *message_ptr) {
 
 bool UbloxParser::verify_checksum() { return true; }
 
-Parser::MessageType UbloxParser::PrepareMessage(const std::string &message,
-                                                MessagePtr *message_ptr) {
-  std::string messageID = message.substr(3, 3);
-  std::vector<std::string> contents;
+Parser::MessageType UbloxParser::PrepareMessage(MessagePtr *message_ptr) {
 
-  // formatting message into a vector
-  std::string message_copy = message;
-  size_t pos = 0;
-  std::string token;
-  while ((pos = message_copy.find(",")) != std::string::npos) {
-    token = message_copy.substr(0, pos);
-    contents.push_back(token);
-    message_copy.erase(0, pos + 1);
-  }
+  uint8_t* message = nullptr;
+  ublox::ClassId class_id;
+  ublox::MessageId message_id;
+  uint16_t message_length;
 
-  AINFO << contents[3];
+  //getting header information
+  auto header = reinterpret_cast<const ublox::Header*>(buffer_.data());
+  message = buffer_.data();
+  class_id = header->class_id;
+  message_id = header->message_id;
+  AINFO << "Class ID: " << class_id << " Message ID: " << message_id;
+  message_length = header->message_length;
 
-  // GNSS satellite fault detection
-  if (messageID == "GBS") {
-    bestpos_.set_sol_status(SolutionStatus::SOL_COMPUTED);
-    bestpos_.set_sol_type(SolutionType::NONE);
-    bestpos_.set_measurement_time(std::stod(contents[1]));
-    if (contents[2] != "") {
-      bestpos_.set_latitude_std_dev(std::stod(contents[2]));
-    }
-    if (contents[3] != "") {
-      bestpos_.set_longitude_std_dev(std::stod(contents[3]));
-    }
-    if (contents[4] != "") {
-      bestpos_.set_height_std_dev(std::stod(contents[4]));
-    }
-    *message_ptr = &bestpos_;
-    return MessageType::BEST_GNSS_POS;
-  }
-
-  // Global positioning system fix data
-  else if (messageID == "GGA") {
-    bestpos_.set_sol_status(SolutionStatus::SOL_COMPUTED);
-    bestpos_.set_sol_type(SolutionType::NONE);
-    bestpos_.set_measurement_time(std::stod(contents[1]));
-    if (contents[2] != "") {
-      bestpos_.set_latitude(std::stod(contents[1]));
-    }
-    if (contents[4] != "") {
-      bestpos_.set_longitude(std::stod(contents[3]));
-    }
-    if (contents[4] != "") {
-      bestpos_.set_height_msl(std::stod(contents[9]));
-    }
-    *message_ptr = &bestpos_;
-    return MessageType::BEST_GNSS_POS;
-  }
-
-  // Latitude and longitude, with time of position fix and status
-  else if (messageID == "GLL") {
-    if (contents[6] != "A") {
-      bestpos_.set_sol_status(SolutionStatus::SOL_COMPUTED);
-    } else {
-      bestpos_.set_sol_status(SolutionStatus::INSUFFICIENT_OBS);
-    }
-    bestpos_.set_sol_type(SolutionType::NONE);
-    if (contents[1] != "") {
-      bestpos_.set_latitude(std::stod(contents[1]));
-    }
-    if (contents[3] != "") {
-      bestpos_.set_longitude(std::stod(contents[3]));
-    }
-    bestpos_.set_measurement_time(std::stod(contents[5]));
-    *message_ptr = &bestpos_;
-    return MessageType::BEST_GNSS_POS;
-  }
-
-  // GNSS DOP and active satellites
-  else if (messageID == "GSA") {
-    double total_sat = 0;
-
-    for (int i = 3; i < 15; i++) {
-      if (contents[i] != "") {
-        total_sat++;
+  switch (message_id) {
+    case ublox::NAV_POSECEF:
+      AINFO << "ECEF position returned.";
+      break;
+    case ublox::NAV_POSLLH:
+      if (message_length != sizeof(ublox::NAVPOSLLH)) {
+        AERROR << "Incorrect message_length";
+        break;
       }
-    }
-    bestpos_.set_num_sats_tracked(total_sat);
+      // auto payload = reinterpret_cast<const ublox::NAVPOSLLH*>(message);
+      // bestpos_.set_measurement_time(payload->itow);
+      // bestpos_.set_latitude(payload->lat);
+      // bestpos_.set_longitude(payload->lon);
+      // *message_ptr = &bestpos_;
+      return MessageType::BEST_GNSS_POS;
+      break;
+    case ublox::NAV_PVT:
+      break;
+    // case ublox::NAV_PVT:
+    //   AINFO << "Position Velocity Time Solution";
+    //   if (message_length != sizeof(ublox::NAVPVT)) {
+    //     AERROR << "Incorrect message_length";
+    //     break;
+    //   }
+    //   auto payload_pvt = reinterpret_cast<const ublox::NAVPVT*>(message);
+    //   bestpos_.set_measurement_time(payload_pvt->itow);
+    //   bestpos_.set_latitude(payload_pvt->lat);
+    //   bestpos_.set_longitude(payload_pvt->lon);
+    //   *message_ptr = &bestpos_;
+    //   return MessageType::BEST_GNSS_POS;
+    //   break;
+    // default:
+    //   break;
   }
-
-  // GNSS satellites in view
-  else if (messageID == "GSV") {
-    if (contents[3] != "") {
-      bestpos_.set_num_sats_tracked(std::stod(contents[3]));
-    }
-  }
-
-  // Recommended minimum data
-  else if (messageID == "RMC") {
-    gnss_.set_measurement_time(std::stod(contents[1]));
-
-    if (contents[2] == "A") {
-      gnss_.set_solution_status(SolutionStatus::SOL_COMPUTED);
-    } else {
-      bestpos_.set_sol_status(SolutionStatus::INSUFFICIENT_OBS);
-    }
-
-    if (contents[3] != "") {
-      gnss_.mutable_position()->set_lon(std::stod(contents[3]));
-    }
-    if (contents[3] != "") {
-      gnss_.mutable_position()->set_lat(std::stod(contents[5]));
-    }
-
-    double yaw = 400;
-    gnss_.set_type(apollo::drivers::gnss::Gnss::INVALID);
-    if (contents[8] != "") {
-      gnss_.set_type(apollo::drivers::gnss::Gnss::SINGLE);
-      yaw = newtonm2::azimuth_deg_to_yaw_rad(std::stod(contents[8]));
-    }
-
-    if (contents[7] != "" && yaw != 400) {
-      gnss_.mutable_linear_velocity()->set_x(std::stod(contents[7]) * cos(yaw) *
-                                             0.514444);
-      gnss_.mutable_linear_velocity()->set_y(std::stod(contents[7]) * sin(yaw) *
-                                             0.514444);
-    }
-
-    gnss_.set_position_type(0);
-
-    *message_ptr = &gnss_;
-    return MessageType::GNSS;
-  }
-
-  // Course over ground and ground speed
-  else if (messageID == "VTG") {
-    double yaw = 400;
-    gnss_.set_type(apollo::drivers::gnss::Gnss::INVALID);
-    if (contents[1] != "") {
-      gnss_.set_type(apollo::drivers::gnss::Gnss::SINGLE);
-      yaw = newtonm2::azimuth_deg_to_yaw_rad(std::stod(contents[1]));
-    }
-    if (contents[5] != "" && yaw != 400) {
-      gnss_.mutable_linear_velocity()->set_x(std::stod(contents[5]) * cos(yaw) *
-                                             0.514444);
-      gnss_.mutable_linear_velocity()->set_y(std::stod(contents[5]) * sin(yaw) *
-                                             0.514444);
-    }
-
-    gnss_.set_solution_status(SolutionStatus::SOL_COMPUTED);
-    gnss_.set_position_type(0);
-    *message_ptr = &gnss_;
-    return MessageType::GNSS;
-  }
-
-  // Time and date
-  else if (messageID == "ZDA") {
-  }
-
   return MessageType::NONE;
 }
 
