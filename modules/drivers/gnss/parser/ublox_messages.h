@@ -31,7 +31,11 @@ enum ClassId : uint8_t{
 enum MessageId : uint8_t {
   NAV_POSECEF = 0x01,
   NAV_POSLLH = 0x02,
+  NAV_DOP = 0x04,
   NAV_PVT = 0x07,
+  NAV_VELECEF = 0x11,
+  NAV_TIMEGPS = 0x20,
+  NAV_EOE = 0x61,
 };
 
 // Every binary message has 32-bit CRC performed on all data including the
@@ -141,12 +145,25 @@ struct NAVPOSLLH{
   uint32_t vAcc; //vertical accuracy estimate
 };
 
+// ECEF position
 struct NAVPOSECEF{
   uint32_t itow; //time of week of navigation epoch
   uint32_t ecefX;
   uint32_t ecefY;
   uint32_t ecefZ;
   uint32_t pAcc;
+};
+
+//Dilution of precision
+struct NAVDOP{
+  uint32_t itow;
+  uint16_t gDOP; // geometric DOP
+  uint16_t pDOP; // position DOP
+  uint16_t tDOP; // time DOP
+  uint16_t vDOP; // vertical DOP
+  uint16_t hDOP; // horizontal DOP
+  uint16_t nDOP; // northing DOP
+  uint16_t eDOP; // easting DOP
 };
 
 struct NAVPVT{
@@ -170,8 +187,8 @@ struct NAVPVT{
   int32_t hMSL;
   uint32_t hAcc;
   uint32_t vAcc;
-  int32_t ve1N;
-  int32_t ve1E;
+  int32_t velN;
+  int32_t velE;
   int32_t velD;
   int32_t gSpeed;
   int32_t headMot;
@@ -179,10 +196,42 @@ struct NAVPVT{
   uint32_t headAcc;
   uint16_t pDOP;
   uint16_t flags3; //bitfield
-  uint8_t reserved1;
+  uint32_t reserved1;
   int32_t headVeh;
   int16_t magDec;
   uint16_t magAcc;
+};
+
+struct NAVVELECEF{
+  uint32_t itow;
+  int32_t ecefVX;
+  int32_t ecefVY;
+  int32_t ecefVZ;
+  uint32_t sAcc;
+};
+
+struct NAVTIMEGPS{
+  uint32_t itow;
+  int32_t ftow;
+  int16_t week;
+  int8_t leapS;
+  uint8_t valid; // bitfield
+  uint32_t tAcc;
+};
+
+struct NAVEOE{
+  uint32_t itow;
+};
+
+struct ECEF {
+  uint32_t ecefX;
+  uint32_t ecefY;
+  uint32_t ecefZ;
+};
+
+struct LATLON {
+  uint32_t lat;
+  uint32_t lon;
 };
 
 #pragma pack(pop)  // Back to whatever the previous packing mode was.

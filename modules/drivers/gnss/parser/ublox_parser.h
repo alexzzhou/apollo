@@ -8,6 +8,7 @@
 
 #include "cyber/cyber.h"
 #include "modules/drivers/gnss/parser/novatel_messages.h"
+#include "modules/drivers/gnss/parser/ublox_messages.h"
 #include "modules/drivers/gnss/parser/parser.h"
 #include "modules/drivers/gnss/parser/rtcm_decode.h"
 #include "modules/drivers/gnss/proto/gnss.pb.h"
@@ -36,7 +37,8 @@ class UbloxParser : public Parser {
 
   Parser::MessageType PrepareMessage(MessagePtr *message_ptr);
 
-  // bool HandleGSV(std::vector<std::string> contents);
+  bool HandleNAV_PVT(const ublox::NAVPVT* payload);
+
   // The handle_xxx functions return whether a message is ready.
   //bool handle_esf_raw(const ublox::EsfRaw* raw, size_t data_size);
   //bool handle_esf_ins(const ublox::EsfIns* ins);
