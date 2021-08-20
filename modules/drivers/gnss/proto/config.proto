@@ -17,6 +17,9 @@ message Stream {
 
     NEWTONM2_TEXT = 30;
     NEWTONM2_BINARY = 31;
+
+    XSENS_TEXT = 40;
+    XSENS_BINARY = 41;
   }
   optional Format format = 1;
 
@@ -37,6 +40,10 @@ message Stream {
     optional int32 port = 2 [default = 3001];
   }
 
+  message Xsens {
+
+  }
+
   message Ntrip {
     optional bytes address = 1;  // Something like "1.1.1.1".
     optional int32 port = 2 [default = 2101];
@@ -51,8 +58,9 @@ message Stream {
     Tcp tcp = 3;
     Udp udp = 4;
     Ntrip ntrip = 5;
+    Xsens xsens = 6;
   }
-  optional bool push_location = 6;
+  optional bool push_location = 7;
 }
 
 // Device-specific configuration.
@@ -66,6 +74,9 @@ message NewtonM2Config {
 }
 
 message UbloxConfig {
+}
+
+message XsensConfig {
 }
 
 enum ImuType {

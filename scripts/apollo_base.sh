@@ -110,6 +110,7 @@ function set_lib_path() {
   fi
   export LD_LIBRARY_PATH=/usr/local/apollo/boost/lib:$LD_LIBRARY_PATH
   export LD_LIBRARY_PATH=/usr/local/apollo/paddlepaddle_dep/mkldnn/lib/:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH=/usr/local/apollo/third_party/xsens/lib/:$LD_LIBRARY_PATH
   export PYTHONPATH=/usr/local/lib/python2.7/dist-packages:${PY_LIB_PATH}:${PY_TOOLS_PATH}:${PYTHONPATH}
 
   # Set teleop paths

@@ -1,0 +1,7 @@
+data {
+    format: XSENS_BINARY
+    xsens {
+    }
+}
+
+gpsbin_folder: "/apollo/data/gpsbin"

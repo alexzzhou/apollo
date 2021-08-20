@@ -213,6 +213,7 @@ bool LoadLibrary(const std::string& library_path, ClassLoader* loader) {
     try {
       SetCurActiveClassLoader(loader);
       SetCurLoadingLibraryName(library_path);
+      AINFO << "load shared object: " << library_path;
       poco_library = PocoLibraryPtr(new Poco::SharedLibrary(library_path));
     } catch (const Poco::LibraryLoadException& e) {
       SetCurLoadingLibraryName("");

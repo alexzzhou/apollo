@@ -42,7 +42,9 @@ bool GnssDriverComponent::Init() {
     AERROR << "Init gnss stream failed";
     return false;
   }
+  AINFO << "Starting GNSS";
   raw_stream_->Start();
+  AINFO << "GNSS has started";
   monitor_logger_buffer_.INFO("gnss is started.");
   return true;
 }

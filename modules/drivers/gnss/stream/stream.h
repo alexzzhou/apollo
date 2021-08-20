@@ -41,6 +41,8 @@ class Stream {
   static Stream *create_udp(const char *address, uint16_t port,
                             uint32_t timeout_usec = 1000000);
 
+  static Stream *create_xsens();
+
   // Currently the following baud rates are supported:
   //  9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600.
   static Stream *create_serial(const char *device_name, uint32_t baud_rate,

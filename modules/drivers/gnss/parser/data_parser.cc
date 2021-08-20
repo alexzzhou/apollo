@@ -32,7 +32,11 @@
 #include "modules/localization/proto/imu.pb.h"
 
 #include "modules/drivers/gnss/parser/parser.h"
+#include "modules/drivers/gnss/parser/xsens_parser.h"
 #include "modules/drivers/gnss/util/time_conversion.h"
+
+#include "xsens/include/xsensdeviceapi.h"
+#include "xsens/include/xstypes.h"
 
 namespace apollo {
 namespace drivers {
@@ -64,6 +68,9 @@ Parser *CreateParser(config::Config config, bool is_base_station = false) {
     case config::Stream::UBLOX_BINARY:
       return Parser::CreateUblox(config);
 
+    case config::Stream::XSENS_BINARY:
+      return Parser::CreateXsens(config);
+    
     default:
       return nullptr;
   }
@@ -127,17 +134,21 @@ void DataParser::ParseRawData(const std::string &msg) {
     return;
   }
 
-  AINFO << "Data received, parse raw data: " << msg;
+  AINFO << "Data received, parse raw data: " << msg << " size: " << msg.size();
   data_parser_->Update(msg);
-  Parser::MessageType type;
+  std::vector<std::pair<MessagePtr, Parser::MessageType>> types;
   MessagePtr msg_ptr;
 
   while (cyber::OK()) {
-    type = data_parser_->GetMessage(&msg_ptr);
-    if (type == Parser::MessageType::NONE) {
-      break;
+    AINFO << "Getting Message.";
+    types = data_parser_->GetMultiMessage(&msg_ptr);
+    std::vector<std::pair<MessagePtr, Parser::MessageType>>::iterator it = types.begin();
+    
+    while (it != types.end()){
+      DispatchMessage((*it).second, (*it).first);
+      ++it;
     }
-    DispatchMessage(type, msg_ptr);
+    break; 
   }
 }
 
@@ -269,7 +280,7 @@ void DataParser::PublishOdometry(const MessagePtr message) {
   x *= DEG_TO_RAD_LOCAL;
   y *= DEG_TO_RAD_LOCAL;
 
-  pj_transform(wgs84pj_source_, utm_target_, 1, 1, &x, &y, NULL);
+  // pj_transform(wgs84pj_source_, utm_target_, 1, 1, &x, &y, NULL);
 
   gps_msg->mutable_position()->set_x(x);
   gps_msg->mutable_position()->set_y(y);

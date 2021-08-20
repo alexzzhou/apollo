@@ -55,6 +55,7 @@ std::string getLocalTimeFileStr(const std::string &gpsbin_folder) {
   char local_time_char[64];
   std::tm time_tm;
   localtime_r(&it, &time_tm);
+  AINFO << "GPS bin folder: " << gpsbin_folder;
 
   std::strftime(local_time_char, sizeof(local_time_char), "%Y%m%d_%H%M%S",
                 &time_tm);
@@ -95,11 +96,11 @@ Stream *create_stream(const config::Stream &sd) {
 
     case config::Stream::kUdp:
       if (!sd.udp().has_address()) {
-        AERROR << "tcp def has no address field.";
+        AERROR << "udp def has no address field.";
         return nullptr;
       }
       if (!sd.udp().has_port()) {
-        AERROR << "tcp def has no port field.";
+        AERROR << "udp def has no port field.";
         return nullptr;
       }
       return Stream::create_udp(sd.udp().address().c_str(),
@@ -130,6 +131,10 @@ Stream *create_stream(const config::Stream &sd) {
           sd.ntrip().address(), static_cast<uint16_t>(sd.ntrip().port()),
           sd.ntrip().mount_point(), sd.ntrip().user(), sd.ntrip().password(),
           sd.ntrip().timeout_s());
+    
+    case config::Stream::kXsens:
+      return Stream::create_xsens();
+    
     default:
       return nullptr;
   }
@@ -279,6 +284,7 @@ bool RawStream::Init() {
     return false;
   }
 
+  AINFO << "Has gps bin folder: " << config_.has_gpsbin_folder();
   const std::string gpsbin_file = getLocalTimeFileStr(config_.gpsbin_folder());
   gpsbin_stream_.reset(new std::ofstream(
       gpsbin_file, std::ios::app | std::ios::out | std::ios::binary));
@@ -295,7 +301,7 @@ bool RawStream::Init() {
   chassis_reader_ = node_->CreateReader<Chassis>(
       FLAGS_chassis_topic,
       [&](const std::shared_ptr<Chassis> &chassis) { chassis_ptr_ = chassis; });
-
+  AINFO << "reaches here.";
   return true;
 }
 

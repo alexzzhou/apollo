@@ -46,6 +46,8 @@ inline T *As(::google::protobuf::Message *message_ptr) {
   return dynamic_cast<T *>(message_ptr);
 }
 
+using MessagePtr = ::google::protobuf::Message*;
+
 // An abstract class of Parser.
 // One should use the create_xxx() functions to create a Parser object.
 class Parser {
@@ -60,6 +62,9 @@ class Parser {
 
   // Return a pointer to a Ublox parser. The caller should take ownership.
   static Parser *CreateUblox(const config::Config &config);
+
+  // Return a pointer to a Xsens parser. The caller should take ownership.
+  static Parser *CreateXsens(const config::Config &config);
 
   // Return a pointer to rtcm v3 parser. The caller should take ownership.
   static Parser *CreateRtcmV3(bool is_base_station = false);
@@ -100,7 +105,10 @@ class Parser {
   // Gets a parsed protobuf message. The caller must consume the message before
   // calling another
   // GetMessage() or Update();
-  virtual MessageType GetMessage(MessagePtr *message_ptr) = 0;
+  virtual Parser::MessageType GetMessage(MessagePtr *message_ptr) = 0;
+
+  virtual std::vector<std::pair<MessagePtr, Parser::MessageType>> GetMultiMessage(MessagePtr *message_ptr) 
+  { return std::vector<std::pair<MessagePtr, Parser::MessageType>>();};
 
  protected:
   Parser() {}

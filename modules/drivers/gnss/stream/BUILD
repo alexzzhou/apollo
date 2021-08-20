@@ -10,6 +10,7 @@ cc_library(
         ":serial_stream",
         ":tcp_stream",
         ":udp_stream",
+        ":xsens_stream",
     ],
 )
 
@@ -72,6 +73,24 @@ cc_library(
         ":stream",
         "//cyber",
         "//modules/drivers/gnss/util:gnss_util",
+    ],
+)
+
+cc_library(
+    name = "xsens_stream",
+    srcs = ["xsens_stream.cc"],
+    hdrs = ["xsens_stream.h"],
+    deps = [
+        ":stream",
+        "//cyber",
+        "//third_party/xsens",
+    ],
+    linkopts = [
+        "-Lthird_party/xsens/lib",
+        "-lxsensdeviceapi -lxstypes",
+    ],
+    copts = [
+        "-Ithird_party/xsens/include",
     ],
 )
 
