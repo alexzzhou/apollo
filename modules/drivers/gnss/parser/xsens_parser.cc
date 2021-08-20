@@ -198,16 +198,11 @@ bool XsensParser::HandleBestPos(XsDataPacket packet){
   //checking for latitude, longitude, and altitude
   if (packet.containsLatitudeLongitude()) {
     XsVector latlon = packet.latitudeLongitude();
-
-    AINFO << " |Lat:" << latlon[0] << ", Lon:" << latlon[1];
     bestpos_.set_latitude(latlon[0]);
     bestpos_.set_longitude(latlon[1]);
   }
-  if (packet.containsAltitudeMsl()){
-    bestpos_.set_height_msl(packet.altitude());
-  }
 
-  ins_.set_measurement_time(apollo::common::time::Clock::NowInSeconds());
+  bestpos_.set_measurement_time(apollo::common::time::Clock::NowInSeconds());
   return true;
 }
 
@@ -219,6 +214,16 @@ bool XsensParser::HandleBestPos(XsDataPacket packet){
     \returns true
 */
 bool XsensParser::HandleGNSS(XsDataPacket packet){
+  if (packet.containsLatitudeLongitude()) {
+    XsVector latlon = packet.latitudeLongitude();
+    gnss_.mutable_position()->set_lon(latlon[1]);
+    gnss_.mutable_position()->set_lat(latlon[0]);
+  }
+  if (packet.containsAltitude()){
+    gnss_.mutable_position()->set_height(packet.altitude());
+  }
+  gnss_.set_measurement_time(apollo::common::time::Clock::NowInSeconds());
+  gnss_.set_type(apollo::drivers::gnss::Gnss::SINGLE);
   return true;
 }
 
@@ -233,7 +238,6 @@ bool XsensParser::HandleImu(XsDataPacket packet) {
 
   if (packet.containsVelocity()) {
     XsVector vel = packet.velocity(XDI_VelocityXYZ);
-    AINFO << " |E:" << vel[0] << ", N:" << vel[1] << ", U:" << vel[2];
     
     //setting velocity
     // imu_.mutable_linear_velocity()->set_x(vel[0]);
@@ -244,9 +248,7 @@ bool XsensParser::HandleImu(XsDataPacket packet) {
   AINFO << packet.containsCalibratedData();
   if (packet.containsCalibratedData()) {
     XsVector acc = packet.calibratedAcceleration();
-    AINFO << "\r"
-          << "Acc X:" << acc[0] << ", Acc Y:" << acc[1] << ", Acc Z:" << acc[2];
-    
+
     //setting linear acceleration
     imu_.mutable_linear_acceleration()->set_x(acc[0]);
     imu_.mutable_linear_acceleration()->set_y(acc[1]);
@@ -265,7 +267,7 @@ bool XsensParser::HandleImu(XsDataPacket packet) {
     AINFO << " |Mag X:" << mag[0] << ", Mag Y:" << mag[1]
           << ", Mag Z:" << mag[2];
   }
-
+  imu_.set_measurement_time(apollo::common::time::Clock::NowInSeconds());
   return true;
 }
 
@@ -281,17 +283,13 @@ bool XsensParser::HandleIns(XsDataPacket packet){
 
   if (packet.containsOrientation()) {
     XsQuaternion quaternion = packet.orientationQuaternion();
-    AINFO << "\r"
-          << "q0:" << quaternion.w() << ", q1:" << quaternion.x()
-          << ", q2:" << quaternion.y() << ", q3:" << quaternion.z();
 
     XsEuler euler = packet.orientationEuler();
-    AINFO << " |Roll:" << euler.roll() << ", Pitch:" << euler.pitch()
-          << ", Yaw:" << euler.yaw();
     ins_.mutable_euler_angles()->set_x(euler.roll());
     ins_.mutable_euler_angles()->set_y(euler.pitch());
     ins_.mutable_euler_angles()->set_z(euler.yaw());
   }
+
   if (packet.containsLatitudeLongitude()){
     XsVector latlon = packet.latitudeLongitude();
     ins_.mutable_position()->set_lon(latlon[1]);
