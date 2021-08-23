@@ -29,8 +29,8 @@ Parser *Parser::CreateXsens(const config::Config &config) {
   return new XsensParser();
 }
 
-std::vector<std::pair<MessagePtr, Parser::MessageType>> XsensParser::GetMultiMessage(MessagePtr *message_ptr){
-  
+std::vector<std::pair<MessagePtr, Parser::MessageType>>
+XsensParser::GetMultiMessage(MessagePtr *message_ptr) {
   std::vector<std::pair<MessagePtr, Parser::MessageType>> types;
   if (data_ == nullptr) {
     return types;
@@ -39,7 +39,7 @@ std::vector<std::pair<MessagePtr, Parser::MessageType>> XsensParser::GetMultiMes
   AINFO << "Parsing Message.";
   // uint8_t msg_id;
   uint8_t msg_length;
-  uint16_t ext_msg_length;
+
   while (data_ < data_end_) {
     if (buffer_.empty()) {  // Looking for PREAMBLE
       if (*data_ == 0xFA) {
@@ -57,30 +57,29 @@ std::vector<std::pair<MessagePtr, Parser::MessageType>> XsensParser::GetMultiMes
       buffer_.push_back(*data_++);
     } else if (buffer_.size() == 3) {  // Looking for Message Len
       msg_length = *data_;
-      buffer_.push_back(*data_++);
-    } else if (buffer_.size() == 4){
-      ext_msg_length = *data_;
-      buffer_.push_back(*data_++);
-      buffer_.push_back(*data_++);
-      total_length_ = 8 + msg_length + ext_msg_length;
+      total_length_ = 5 + msg_length;
       buffer_.push_back(*data_++);
     } else if (total_length_ > 0) {
-      if (buffer_.size() < total_length_) {  // Working on body.
+      while (buffer_.size() < total_length_) {  // Working on body.
         buffer_.push_back(*data_++);
-        continue;
       }
 
-      //forming XsDataPacket from raw data
+      // forming XsDataPacket from raw data
       XsMessage message(buffer_.data(), total_length_);
       XsDataPacket packet(&message);
-      
-      std::vector<std::pair<MessagePtr, Parser::MessageType>> types = PrepareMessage(message_ptr, packet);
+
+      AINFO << "Preparing Message: " << data_end_ - data_;
+      std::vector<std::pair<MessagePtr, Parser::MessageType>> types =
+          PrepareMessage(message_ptr, packet);
       buffer_.clear();
       total_length_ = 0;
-      
+
       return types;
     }
   }
+  std::pair<MessagePtr, Parser::MessageType> pack =
+      std::make_pair(nullptr, MessageType::NONE);
+  types.push_back(pack);
   return types;
 }
 /*! \brief Parses raw data taken from DataParser and formats into protobuf
@@ -151,38 +150,39 @@ bool XsensParser::verify_checksum() { return true; }
       message
 
     \param message_ptr pointer to protobuf message
-    \param packet Xsens Data Packet that contains data formatted into 
+    \param packet Xsens Data Packet that contains data formatted into
           Xsens standards
     \returns MessageType object, which identifies the type of protobuf
           message pointed to by message_ptr
 */
-std::vector<std::pair<MessagePtr, Parser::MessageType>> XsensParser::PrepareMessage(MessagePtr *message_ptr, XsDataPacket packet) {
-
+std::vector<std::pair<MessagePtr, Parser::MessageType>>
+XsensParser::PrepareMessage(MessagePtr *message_ptr, XsDataPacket packet) {
   std::vector<std::pair<MessagePtr, Parser::MessageType>> types;
-  
+
   if (HandleBestPos(packet)) {
-    std::pair<MessagePtr, Parser::MessageType> pack = std::make_pair(&bestpos_, MessageType::BEST_GNSS_POS);
+    std::pair<MessagePtr, Parser::MessageType> pack =
+        std::make_pair(&bestpos_, MessageType::BEST_GNSS_POS);
     types.push_back(pack);
   }
 
-  if (HandleGNSS(packet)){
-    std::pair<MessagePtr, Parser::MessageType> pack = std::make_pair(&gnss_, MessageType::GNSS);
+  if (HandleGNSS(packet)) {
+    std::pair<MessagePtr, Parser::MessageType> pack =
+        std::make_pair(&gnss_, MessageType::GNSS);
     types.push_back(pack);
   }
 
   if (HandleIns(packet)) {
-    std::pair<MessagePtr, Parser::MessageType> pack = std::make_pair(&ins_, MessageType::INS);
+    std::pair<MessagePtr, Parser::MessageType> pack =
+        std::make_pair(&ins_, MessageType::INS);
     types.push_back(pack);
   }
 
   if (HandleImu(packet)) {
-    std::pair<MessagePtr, Parser::MessageType> pack = std::make_pair(&imu_, MessageType::IMU);
+    std::pair<MessagePtr, Parser::MessageType> pack =
+        std::make_pair(&imu_, MessageType::IMU);
     types.push_back(pack);
   }
   
-  std::pair<MessagePtr, Parser::MessageType> pack = std::make_pair(nullptr, MessageType::NONE);
-  types.push_back(pack);
-
   return types;
 }
 
@@ -236,37 +236,23 @@ bool XsensParser::HandleGNSS(XsDataPacket packet){
 */
 bool XsensParser::HandleImu(XsDataPacket packet) {
 
-  if (packet.containsVelocity()) {
-    XsVector vel = packet.velocity(XDI_VelocityXYZ);
-    
-    //setting velocity
-    // imu_.mutable_linear_velocity()->set_x(vel[0]);
-    // imu_.mutable_linear_velocity()->set_y(vel[1]);
-    // imu_.mutable_linear_velocity()->set_z(vel[2]);
-  }
-
-  AINFO << packet.containsCalibratedData();
-  if (packet.containsCalibratedData()) {
+  if (packet.containsCalibratedAcceleration()) {
     XsVector acc = packet.calibratedAcceleration();
 
     //setting linear acceleration
     imu_.mutable_linear_acceleration()->set_x(acc[0]);
     imu_.mutable_linear_acceleration()->set_y(acc[1]);
     imu_.mutable_linear_acceleration()->set_z(acc[2]);
-
+  }
+  if (packet.containsCalibratedGyroscopeData()){
     XsVector gyr = packet.calibratedGyroscopeData();
-    AINFO << " |Gyr X:" << gyr[0] << ", Gyr Y:" << gyr[1]
-          << ", Gyr Z:" << gyr[2];
-    
+
     //setting angular velocity
     imu_.mutable_angular_velocity()->set_x(gyr[0]);
     imu_.mutable_angular_velocity()->set_y(gyr[1]);
     imu_.mutable_angular_velocity()->set_z(gyr[2]);
-
-    XsVector mag = packet.calibratedMagneticField();
-    AINFO << " |Mag X:" << mag[0] << ", Mag Y:" << mag[1]
-          << ", Mag Z:" << mag[2];
   }
+
   imu_.set_measurement_time(apollo::common::time::Clock::NowInSeconds());
   return true;
 }
@@ -304,7 +290,22 @@ bool XsensParser::HandleIns(XsDataPacket packet){
     ins_.mutable_linear_velocity()->set_y(vel[1]);
     ins_.mutable_linear_velocity()->set_z(vel[2]);
   }
+  if (packet.containsCalibratedAcceleration()) {
+    XsVector acc = packet.calibratedAcceleration();
 
+    //setting linear acceleration
+    ins_.mutable_linear_acceleration()->set_x(acc[0]);
+    ins_.mutable_linear_acceleration()->set_y(acc[1]);
+    ins_.mutable_linear_acceleration()->set_z(acc[2]);
+  }
+  if (packet.containsCalibratedGyroscopeData()){
+    XsVector gyr = packet.calibratedGyroscopeData();
+
+    //setting angular velocity
+    ins_.mutable_angular_velocity()->set_x(gyr[0]);
+    ins_.mutable_angular_velocity()->set_y(gyr[1]);
+    ins_.mutable_angular_velocity()->set_z(gyr[2]);
+  }
   ins_.set_measurement_time(apollo::common::time::Clock::NowInSeconds());
   ins_.set_type(apollo::drivers::gnss::Ins::GOOD);
   AINFO << "Setting ins data.";

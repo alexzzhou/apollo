@@ -68,7 +68,7 @@ bool XsensStream::Connect() {
   // Create and attach callback handler to device
   device->addCallbackHandler(&callback);
 
-  // Put the device into configuration mode before configuring the device
+  //Put the device into configuration mode before configuring the device
   AINFO << "Putting device into configuration mode..." << std::endl;
   if (!device->gotoConfig()) {
     AERROR << "Could not put device into configuration mode. Aborting.";
@@ -82,12 +82,14 @@ bool XsensStream::Connect() {
   configArray.push_back(XsOutputConfiguration(XDI_SampleTimeFine, 0));
 
   if (device->deviceId().isImu()) {
+    AINFO << "Config IMU";
     configArray.push_back(XsOutputConfiguration(XDI_Acceleration, 100));
     configArray.push_back(XsOutputConfiguration(XDI_RateOfTurn, 100));
     // configArray.push_back(XsOutputConfiguration(XDI_MagneticField, 100));
   } else if (device->deviceId().isVru() || device->deviceId().isAhrs()) {
     // configArray.push_back(XsOutputConfiguration(XDI_Quaternion, 100));
   } else if (device->deviceId().isGnss()) {
+    AINFO << "Config GNSS";
     configArray.push_back(XsOutputConfiguration(XDI_Quaternion, 100));
     configArray.push_back(XsOutputConfiguration(XDI_LatLon, 100));
     configArray.push_back(XsOutputConfiguration(XDI_AltitudeEllipsoid, 100));
