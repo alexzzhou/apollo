@@ -15,48 +15,6 @@ namespace apollo {
 namespace drivers {
 namespace gnss {
 
-// class CallbackHandler : public XsCallback {
-//  public:
-//   CallbackHandler(size_t maxBufferSize = 5)
-//       : m_maxNumberOfPacketsInBuffer(maxBufferSize),
-//         m_numberOfPacketsInBuffer(0) {}
-
-//   virtual ~CallbackHandler() throw() {}
-
-//   bool packetAvailable() const {
-//     std::lock_guard<std::recursive_mutex> lock(m_mutex);
-//     return m_numberOfPacketsInBuffer > 0;
-//   }
-
-//   XsDataPacket getNextPacket() {
-//     assert(packetAvailable());
-//     std::lock_guard<std::recursive_mutex> lock(m_mutex);
-//     XsDataPacket oldestPacket(m_packetBuffer.front());
-//     m_packetBuffer.pop_front();
-//     --m_numberOfPacketsInBuffer;
-//     return oldestPacket;
-//   }
-
-//  protected:
-//   virtual void onLiveDataAvailable(XsDevice*, const XsDataPacket* packet) {
-//     std::lock_guard<std::recursive_mutex> lock(m_mutex);
-//     assert(packet != nullptr);
-//     while (m_numberOfPacketsInBuffer >= m_maxNumberOfPacketsInBuffer)
-//       (void)getNextPacket();
-
-//     m_packetBuffer.push_back(*packet);
-//     ++m_numberOfPacketsInBuffer;
-//     assert(m_numberOfPacketsInBuffer <= m_maxNumberOfPacketsInBuffer);
-//   }
-
-//  private:
-//   mutable std::recursive_mutex m_mutex;
-
-//   size_t m_maxNumberOfPacketsInBuffer;
-//   size_t m_numberOfPacketsInBuffer;
-//   std::list<XsDataPacket> m_packetBuffer;
-// };
-
 class CallbackHandler : public XsCallback {
  public:
   CallbackHandler(size_t maxBufferSize = 5)
@@ -80,17 +38,6 @@ class CallbackHandler : public XsCallback {
   }
 
  protected:
-  // virtual void onLiveDataAvailable(XsDevice*, const XsDataPacket* packet) {
-  //   std::lock_guard<std::recursive_mutex> lock(m_mutex);
-  //   assert(packet != nullptr);
-  //   while (m_numberOfPacketsInBuffer >= m_maxNumberOfPacketsInBuffer)
-  //     (void)getNextPacket();
-
-  //   m_packetBuffer.push_back(*packet);
-  //   ++m_numberOfPacketsInBuffer;
-  //   assert(m_numberOfPacketsInBuffer <= m_maxNumberOfPacketsInBuffer);
-  // }
-
   virtual void onMessageReceivedFromDevice(XsDevice* dev,
                                            XsMessage const* message) {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
@@ -122,6 +69,8 @@ class XsensStream : public Stream {
   virtual size_t read(uint8_t *buffer, size_t max_length);
   virtual size_t write(const uint8_t *data, size_t length);
 
+  inline XsDevice* GetDevice() {return device;};
+  
   XsDataPacket packet_;
 
 private:

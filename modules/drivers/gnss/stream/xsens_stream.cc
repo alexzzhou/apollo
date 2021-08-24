@@ -68,7 +68,7 @@ bool XsensStream::Connect() {
   // Create and attach callback handler to device
   device->addCallbackHandler(&callback);
 
-  //Put the device into configuration mode before configuring the device
+  // Put the device into configuration mode before configuring the device
   AINFO << "Putting device into configuration mode..." << std::endl;
   if (!device->gotoConfig()) {
     AERROR << "Could not put device into configuration mode. Aborting.";
@@ -131,7 +131,6 @@ size_t XsensStream::read(uint8_t* buffer, size_t max_length) {
   int offset = 0;
   while (callback.messageAvailable()) {
     XsMessage message = callback.getNextMessage();
-    AINFO << "Message ID: " << message.getMessageId();
     size_t msg_length = message.getTotalMessageSize();
     if (offset + msg_length > max_length) {
       break;
@@ -144,8 +143,14 @@ size_t XsensStream::read(uint8_t* buffer, size_t max_length) {
 }
 
 size_t XsensStream::write(const uint8_t* buffer, size_t length) {
-  AINFO << "Gets here too.";
-  return 0;
+  XsMessage message = XsMessage(buffer, length);
+  message.setMessageId(XMID_ForwardGnssData);
+  AINFO << "Sending RTK data";
+  if (device->sendRawMessage(message)) {
+    return length;
+  } else {
+    return 0;
+  }
 }
 
 Stream* Stream::create_xsens() { return new XsensStream(); }

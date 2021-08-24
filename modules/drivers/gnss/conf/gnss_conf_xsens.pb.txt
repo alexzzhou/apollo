@@ -4,4 +4,17 @@ data {
     }
 }
 
+rtk_from {
+    format: RTCM_V3
+    ntrip {
+        address: "97.107.142.191"
+        port: 8000
+        mount_point: "L5SITE1"
+        user: ""
+        password: ""
+        timeout_s: 10
+    }
+}
+
+rtk_solution_type: RTK_RECEIVER_SOLUTION
 gpsbin_folder: "/apollo/data/gpsbin"

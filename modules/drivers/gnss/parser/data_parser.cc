@@ -134,7 +134,6 @@ void DataParser::ParseRawData(const std::string &msg) {
     return;
   }
 
-  AINFO << "Data received, parse raw data: " << msg << " size: " << msg.size();
   data_parser_->Update(msg);
   std::vector<std::pair<MessagePtr, Parser::MessageType>> types;
   MessagePtr msg_ptr;
@@ -142,10 +141,8 @@ void DataParser::ParseRawData(const std::string &msg) {
   while (cyber::OK()) {
     types = data_parser_->GetMultiMessage(&msg_ptr);
     std::vector<std::pair<MessagePtr, Parser::MessageType>>::iterator it = types.begin();
-    AINFO << "Getting Message: " << types.size();    
     while (it != types.end()){
       if ((*it).second == Parser::MessageType::NONE){
-        AINFO << "Exiting";
         return;
       }
       DispatchMessage((*it).second, (*it).first);

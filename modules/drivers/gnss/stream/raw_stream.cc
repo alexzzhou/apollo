@@ -508,6 +508,7 @@ void RawStream::RtkSpin() {
   }
   while (cyber::OK()) {
     size_t length = in_rtk_stream_->read(buffer_rtk_, BUFFER_SIZE);
+    AINFO << "Read RTK Data: " << buffer_rtk_;
     if (length > 0) {
       if (rtk_software_solution_) {
         PublishRtkData(length);
