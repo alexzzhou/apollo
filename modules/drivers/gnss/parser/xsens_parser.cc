@@ -31,13 +31,13 @@ Parser *Parser::CreateXsens(const config::Config &config) {
   return new XsensParser();
 }
 
-std::vector<std::pair<MessagePtr, Parser::MessageType>>
+std::vector<std::pair<Parser::MessageType, MessagePtr>>
 XsensParser::GetMultiMessage(MessagePtr *message_ptr) {
-  std::vector<std::pair<MessagePtr, Parser::MessageType>> types;
+  std::vector<std::pair<Parser::MessageType, MessagePtr>> types;
   if (data_ == nullptr) {
     return types;
   }
-  // uint8_t msg_id;
+  uint8_t msg_id;
   uint8_t msg_length;
 
   while (data_ < data_end_) {
@@ -53,7 +53,10 @@ XsensParser::GetMultiMessage(MessagePtr *message_ptr) {
         buffer_.clear();
       }
     } else if (buffer_.size() == 2) {  // Looking for MID
-      // msg_id = *data_;
+      msg_id = *data_;
+      if (msg_id != 54) {
+        AERROR << "Non-data type message received.";
+      }
       buffer_.push_back(*data_++);
     } else if (buffer_.size() == 3) {  // Looking for Message Len
       msg_length = *data_;
@@ -68,7 +71,7 @@ XsensParser::GetMultiMessage(MessagePtr *message_ptr) {
       XsMessage message(buffer_.data(), total_length_);
       XsDataPacket packet(&message);
 
-      std::vector<std::pair<MessagePtr, Parser::MessageType>> types =
+      std::vector<std::pair<Parser::MessageType, MessagePtr>> types =
           PrepareMessage(message_ptr, packet);
       buffer_.clear();
       total_length_ = 0;
@@ -76,8 +79,9 @@ XsensParser::GetMultiMessage(MessagePtr *message_ptr) {
       return types;
     }
   }
-  std::pair<MessagePtr, Parser::MessageType> pack =
-      std::make_pair(nullptr, MessageType::NONE);
+  // If no messages in buffer, return a vector with MessageType::NONE
+  std::pair<Parser::MessageType, MessagePtr> pack =
+      std::make_pair(MessageType::NONE, nullptr);
   types.push_back(pack);
   return types;
 }
@@ -91,7 +95,7 @@ Parser::MessageType XsensParser::GetMessage(MessagePtr *message_ptr) {
   if (data_ == nullptr) {
     return MessageType::NONE;
   }
-  // uint8_t msg_id;
+  uint8_t msg_id;
   uint8_t msg_length;
   uint16_t ext_msg_length;
   while (data_ < data_end_) {
@@ -107,7 +111,10 @@ Parser::MessageType XsensParser::GetMessage(MessagePtr *message_ptr) {
         buffer_.clear();
       }
     } else if (buffer_.size() == 2) {  // Looking for MID
-      // msg_id = *data_;
+      msg_id = *data_;
+      if (msg_id != 54) {
+        AERROR << "Non-data type message received.";
+      }
       buffer_.push_back(*data_++);
     } else if (buffer_.size() == 3) {  // Looking for Message Len
       msg_length = *data_;
@@ -152,31 +159,31 @@ bool XsensParser::verify_checksum() { return true; }
     \returns MessageType object, which identifies the type of protobuf
           message pointed to by message_ptr
 */
-std::vector<std::pair<MessagePtr, Parser::MessageType>>
+std::vector<std::pair<Parser::MessageType, MessagePtr>>
 XsensParser::PrepareMessage(MessagePtr *message_ptr, XsDataPacket packet) {
-  std::vector<std::pair<MessagePtr, Parser::MessageType>> types;
+  std::vector<std::pair<Parser::MessageType, MessagePtr>> types;
 
   if (HandleBestPos(packet)) {
-    std::pair<MessagePtr, Parser::MessageType> pack =
-        std::make_pair(&bestpos_, MessageType::BEST_GNSS_POS);
+    std::pair<Parser::MessageType, MessagePtr> pack =
+        std::make_pair(MessageType::BEST_GNSS_POS, &bestpos_);
     types.push_back(pack);
   }
 
   if (HandleGNSS(packet)) {
-    std::pair<MessagePtr, Parser::MessageType> pack =
-        std::make_pair(&gnss_, MessageType::GNSS);
+    std::pair<Parser::MessageType, MessagePtr> pack =
+        std::make_pair(MessageType::GNSS, &gnss_);
     types.push_back(pack);
   }
 
   if (HandleIns(packet)) {
-    std::pair<MessagePtr, Parser::MessageType> pack =
-        std::make_pair(&ins_, MessageType::INS);
+    std::pair<Parser::MessageType, MessagePtr> pack =
+        std::make_pair(MessageType::INS, &ins_);
     types.push_back(pack);
   }
 
   if (HandleImu(packet)) {
-    std::pair<MessagePtr, Parser::MessageType> pack =
-        std::make_pair(&imu_, MessageType::IMU);
+    std::pair<Parser::MessageType, MessagePtr> pack =
+        std::make_pair(MessageType::IMU, &imu_);
     types.push_back(pack);
   }
 
@@ -191,7 +198,6 @@ XsensParser::PrepareMessage(MessagePtr *message_ptr, XsDataPacket packet) {
     \returns true
 */
 bool XsensParser::HandleBestPos(XsDataPacket packet) {
-  // checking for latitude, longitude, and altitude
   if (packet.containsLatitudeLongitude()) {
     XsVector latlon = packet.latitudeLongitude();
     bestpos_.set_latitude(latlon[0]);

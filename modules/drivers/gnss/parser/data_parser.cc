@@ -26,15 +26,13 @@
 #include "modules/common/adapters/adapter_gflags.h"
 #include "modules/common/util/message_util.h"
 #include "modules/drivers/gnss/parser/newtonm2_parser.h"
+#include "modules/drivers/gnss/parser/parser.h"
+#include "modules/drivers/gnss/parser/xsens_parser.h"
 #include "modules/drivers/gnss/proto/gnss_best_pose.pb.h"
 #include "modules/drivers/gnss/proto/gnss_raw_observation.pb.h"
 #include "modules/drivers/gnss/proto/heading.pb.h"
-#include "modules/localization/proto/imu.pb.h"
-
-#include "modules/drivers/gnss/parser/parser.h"
-#include "modules/drivers/gnss/parser/xsens_parser.h"
 #include "modules/drivers/gnss/util/time_conversion.h"
-
+#include "modules/localization/proto/imu.pb.h"
 #include "xsens/include/xsensdeviceapi.h"
 #include "xsens/include/xstypes.h"
 
@@ -70,7 +68,7 @@ Parser *CreateParser(config::Config config, bool is_base_station = false) {
 
     case config::Stream::XSENS_BINARY:
       return Parser::CreateXsens(config);
-    
+
     default:
       return nullptr;
   }
@@ -135,19 +133,19 @@ void DataParser::ParseRawData(const std::string &msg) {
   }
 
   data_parser_->Update(msg);
-  std::vector<std::pair<MessagePtr, Parser::MessageType>> types;
+  std::vector<std::pair<Parser::MessageType, MessagePtr>> types;
   MessagePtr msg_ptr;
 
   while (cyber::OK()) {
     types = data_parser_->GetMultiMessage(&msg_ptr);
-    std::vector<std::pair<MessagePtr, Parser::MessageType>>::iterator it = types.begin();
-    while (it != types.end()){
-      if ((*it).second == Parser::MessageType::NONE){
+    std::vector<std::pair<Parser::MessageType, MessagePtr>>::iterator it =
+        types.begin();
+    while (it != types.end()) {
+      if ((*it).first == Parser::MessageType::NONE) {
         return;
       }
-      DispatchMessage((*it).second, (*it).first);
+      DispatchMessage((*it).first, (*it).second);
       ++it;
-      
     }
   }
 }

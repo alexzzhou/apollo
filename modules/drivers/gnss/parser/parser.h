@@ -107,8 +107,8 @@ class Parser {
   // GetMessage() or Update();
   virtual Parser::MessageType GetMessage(MessagePtr *message_ptr) = 0;
 
-  virtual std::vector<std::pair<MessagePtr, Parser::MessageType>> GetMultiMessage(MessagePtr *message_ptr) 
-  { return std::vector<std::pair<MessagePtr, Parser::MessageType>>();};
+  virtual std::vector<std::pair<Parser::MessageType, MessagePtr>> GetMultiMessage(MessagePtr *message_ptr) 
+  { return std::vector<std::pair<Parser::MessageType, MessagePtr>>();};
 
  protected:
   Parser() {}

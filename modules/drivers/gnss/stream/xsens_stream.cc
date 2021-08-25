@@ -85,9 +85,8 @@ bool XsensStream::Connect() {
     AINFO << "Config IMU";
     configArray.push_back(XsOutputConfiguration(XDI_Acceleration, 100));
     configArray.push_back(XsOutputConfiguration(XDI_RateOfTurn, 100));
-    // configArray.push_back(XsOutputConfiguration(XDI_MagneticField, 100));
   } else if (device->deviceId().isVru() || device->deviceId().isAhrs()) {
-    // configArray.push_back(XsOutputConfiguration(XDI_Quaternion, 100));
+    configArray.push_back(XsOutputConfiguration(XDI_Quaternion, 100));
   } else if (device->deviceId().isGnss()) {
     AINFO << "Config GNSS";
     configArray.push_back(XsOutputConfiguration(XDI_Quaternion, 100));
@@ -121,21 +120,24 @@ bool XsensStream::Disconnect() {
 }
 
 size_t XsensStream::read(uint8_t* buffer, size_t max_length) {
-
   if (status_ != Stream::Status::CONNECTED) {
     AERROR << "Stream connection error. Aborting.";
     return 0;
   }
 
-  // AINFO << "Check whether packet is available";
   int offset = 0;
   while (callback.messageAvailable()) {
     XsMessage message = callback.getNextMessage();
+    // Checking if message is a MTData2 message
+    if (message.getMessageId() != 54) {
+      continue;
+    }
     size_t msg_length = message.getTotalMessageSize();
     if (offset + msg_length > max_length) {
       break;
     }
-    memcpy(buffer + offset, message.getMessageStart(), message.getTotalMessageSize());
+    memcpy(buffer + offset, message.getMessageStart(),
+           message.getTotalMessageSize());
     offset += message.getTotalMessageSize();
   }
 
@@ -144,8 +146,6 @@ size_t XsensStream::read(uint8_t* buffer, size_t max_length) {
 
 size_t XsensStream::write(const uint8_t* buffer, size_t length) {
   XsMessage message = XsMessage(buffer, length);
-  message.setMessageId(XMID_ForwardGnssData);
-  AINFO << "Sending RTK data";
   if (device->sendRawMessage(message)) {
     return length;
   } else {

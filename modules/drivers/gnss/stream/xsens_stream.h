@@ -68,8 +68,6 @@ class XsensStream : public Stream {
   virtual bool Disconnect();
   virtual size_t read(uint8_t *buffer, size_t max_length);
   virtual size_t write(const uint8_t *data, size_t length);
-
-  inline XsDevice* GetDevice() {return device;};
   
   XsDataPacket packet_;
 

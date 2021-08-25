@@ -301,7 +301,6 @@ bool RawStream::Init() {
   chassis_reader_ = node_->CreateReader<Chassis>(
       FLAGS_chassis_topic,
       [&](const std::shared_ptr<Chassis> &chassis) { chassis_ptr_ = chassis; });
-  AINFO << "reaches here.";
   return true;
 }
 
@@ -482,6 +481,7 @@ void RawStream::StreamStatusCheck() {
 
 void RawStream::DataSpin() {
   common::util::FillHeader("gnss", &stream_status_);
+  
   stream_writer_->Write(stream_status_);
   while (cyber::OK()) {
     size_t length = data_stream_->read(buffer_, BUFFER_SIZE);
@@ -508,7 +508,6 @@ void RawStream::RtkSpin() {
   }
   while (cyber::OK()) {
     size_t length = in_rtk_stream_->read(buffer_rtk_, BUFFER_SIZE);
-    AINFO << "Read RTK Data: " << buffer_rtk_;
     if (length > 0) {
       if (rtk_software_solution_) {
         PublishRtkData(length);
