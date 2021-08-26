@@ -1,15 +1,14 @@
 #pragma once
 
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <list>
-#include <string>
 #include <mutex>
-
-#include "xsens/include/xsensdeviceapi.h"
-#include "xsens/include/xstypes.h"
+#include <string>
 
 #include "modules/drivers/gnss/stream/stream.h"
+#include "xsens/include/xsensdeviceapi.h"
+#include "xsens/include/xstypes.h"
 
 namespace apollo {
 namespace drivers {
@@ -50,6 +49,17 @@ class CallbackHandler : public XsCallback {
     assert(m_numberOfMessagesInBuffer <= m_maxNumberOfMessagesInBuffer);
   }
 
+  virtual void onError(XsDevice* dev, XsResultValue result) {
+    AERROR << "Error of type " << XsResultValue_toString(result)
+           << " has occured.";
+  }
+
+  virtual void onDeviceStateChanged(XsDevice* dev, XsDeviceState newState,
+                                    XsDeviceState oldState) {
+    AINFO << "Device state changed from " << XsDeviceState_toString(oldState)
+          << " to " << XsDeviceState_toString(newState) << ".";
+  }
+
  private:
   mutable std::recursive_mutex m_mutex;
 
@@ -59,25 +69,23 @@ class CallbackHandler : public XsCallback {
 };
 
 class XsensStream : public Stream {
-
  public:
   XsensStream();
   ~XsensStream();
 
   virtual bool Connect();
   virtual bool Disconnect();
-  virtual size_t read(uint8_t *buffer, size_t max_length);
-  virtual size_t write(const uint8_t *data, size_t length);
-  
+  virtual size_t read(uint8_t* buffer, size_t max_length);
+  virtual size_t write(const uint8_t* data, size_t length);
+
   XsDataPacket packet_;
 
-private:
-    XsControl* control = nullptr;
-    XsPortInfo mtPort;
-    XsDevice* device = nullptr;
-    CallbackHandler callback;
-    XsOutputConfigurationArray configArray;
-    
+ private:
+  XsControl* control = nullptr;
+  XsPortInfo mtPort;
+  XsDevice* device = nullptr;
+  CallbackHandler callback;
+  XsOutputConfigurationArray configArray;
 };
 
 }  // namespace gnss

@@ -119,6 +119,12 @@ bool XsensStream::Disconnect() {
   return true;
 }
 
+/*! \brief Reads a message into the buffer. Will only copy message to
+         buffer if the message is of type MTData2.
+    \param buffer contains a pointer to buffer location in memory
+    \param max_length the max length of data that can be placed into buffer
+    \returns length of data read into buffer
+*/
 size_t XsensStream::read(uint8_t* buffer, size_t max_length) {
   if (status_ != Stream::Status::CONNECTED) {
     AERROR << "Stream connection error. Aborting.";
@@ -144,6 +150,12 @@ size_t XsensStream::read(uint8_t* buffer, size_t max_length) {
   return offset;
 }
 
+/*! \brief Writes a message to the xsens device. This function is used
+         by the out_rtk_stream_, which is an instance of XsensStream.
+    \param buffer contains a pointer to data to be sent.
+    \param length length of data to be sent from buffer.
+    \returns length of data sent.
+*/
 size_t XsensStream::write(const uint8_t* buffer, size_t length) {
   XsMessage message = XsMessage(buffer, length);
   if (device->sendRawMessage(message)) {

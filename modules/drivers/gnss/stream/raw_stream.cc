@@ -488,7 +488,7 @@ void RawStream::DataSpin() {
     if (length > 0) {
       std::shared_ptr<RawData> msg_pub = std::make_shared<RawData>();
       if (!msg_pub) {
-        AERROR << "New data sting msg failed.";
+        AERROR << "New data string msg failed.";
         continue;
       }
       msg_pub->set_data(reinterpret_cast<const char *>(buffer_), length);
